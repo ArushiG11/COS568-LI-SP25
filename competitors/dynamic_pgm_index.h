@@ -69,8 +69,22 @@ class DynamicPGM : public Competitor<KeyType, SearchClass> {
     vec.push_back(std::to_string(pgm_error));
     return vec;
   }
+  
+  std::vector<KeyValue<KeyType>> Export() const {
+      std::vector<KeyValue<KeyType>> out;
+      auto pairs = pgm_.ExportData();
+      for (auto& p : pairs) {
+          out.push_back({p.first, p.second});
+      }
+      return out;
+  }
 
- private:
+  void Clear() {
+      pgm_.clear();
+  }
+
+
+private:
   DynamicPGMIndex<KeyType, uint64_t, SearchClass, PGMIndex<KeyType, SearchClass, pgm_error, 16>> pgm_;
 };
 

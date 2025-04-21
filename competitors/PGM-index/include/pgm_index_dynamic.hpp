@@ -318,6 +318,22 @@ public:
         }
     }
 
+    std::vector<std::pair<K, V>> ExportData() const {
+        std::vector<std::pair<K, V>> result;
+
+        for (uint8_t i = min_level; i < used_levels; ++i) {
+            const auto& level_data = get_level(i);
+            for (const auto& item : level_data) {
+                if (!item.deleted()) {
+                    result.emplace_back(item.key(), item.value());
+                }
+            }
+        }
+
+        return result;
+    }
+
+
     /**
      * Inserts an element into the container. If the container already contain an element with an equivalent key its
      * value is updated with @p value.
@@ -335,6 +351,17 @@ public:
     void erase(const K &key) {
         insert(Item(key));
     }
+
+    void clear() {
+        for (auto& level_data : data) {
+            level_data.clear();
+        }
+        for (auto& index : pgm) {
+            index = PGMType();
+        }
+        used_levels = min_level;
+    }
+
 
     /**
      * Finds an element with key equivalent to @p key.
