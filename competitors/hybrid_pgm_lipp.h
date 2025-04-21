@@ -54,7 +54,7 @@ public:
     }
 
 private:
-    mutable DynamicPGM<uint64_t, BranchingBinarySearch<16>, 256> dp_index_;
+    mutable DynamicPGM<uint64_t, BranchingBinarySearch<1>, 256> dp_index_;
     Lipp<KeyType> lipp_index_;
     size_t insert_count_ = 0;
     const size_t flush_threshold_ = 500000;
@@ -62,7 +62,7 @@ private:
     void FlushToLIPP() {
         auto buffer = dp_index_.Export();
         for (const auto& kv : buffer) {
-            lipp_index_.Insert(kv, 0);  // assumes LIPP supports online insert
+            lipp_index_.Insert(kv, 0); 
         }
         dp_index_.Clear();
     }

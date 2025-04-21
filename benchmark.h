@@ -461,11 +461,11 @@ class Benchmark {
         stat.p999 = individual_ns[size_t(exe_cnt * 0.999)];
         stat.max = individual_ns[exe_cnt - 1];
         latencies_.push_back(stat);
-        // if (track_errors_){
-        //   search_bounds_.push_back(index->searchBound());
-        //   search_times_.push_back(index->searchAverageTime());
-        //   search_latencies_.push_back(index->searchLatency(exe_cnt));
-        // }
+        if (track_errors_){
+          search_bounds_.push_back(index->searchBound());
+          search_times_.push_back(index->searchAverageTime());
+          search_latencies_.push_back(index->searchLatency(exe_cnt));
+        }
       }
       else{
         double throughput = 0;
