@@ -3,6 +3,7 @@
 #include "base.h"
 #include "dynamic_pgm_index.h"
 #include "lipp.h"
+#include "searches/branching_binary_search.h" // for BranchingBinarySearch
 
 template<class KeyType>
 class HybridPGMLIPP : public Base<KeyType> {
@@ -11,14 +12,12 @@ public:
         : dp_index_(params), lipp_index_(params) {}
 
     uint64_t Build(const std::vector<KeyValue<KeyType>>& data, size_t num_threads) {
-        // Build phase uses LIPP for initial data
-        return lipp_index_.Build(data, num_threads);
+        return lipp_index_.Build(data, num_threads);  // bulk load into LIPP
     }
 
     void Insert(const KeyValue<KeyType>& data, uint32_t thread_id) {
         dp_index_.Insert(data, thread_id);
         ++insert_count_;
-
         if (insert_count_ >= flush_threshold_) {
             FlushToLIPP();
             insert_count_ = 0;
@@ -27,18 +26,15 @@ public:
 
     size_t EqualityLookup(const KeyType& key, uint32_t thread_id) const {
         size_t result = dp_index_.EqualityLookup(key, thread_id);
-        if (result == util::OVERFLOW || result == util::NOT_FOUND) {
+        if (result == util::NOT_FOUND || result == util::OVERFLOW) {
             return lipp_index_.EqualityLookup(key, thread_id);
         }
         return result;
     }
 
     uint64_t RangeQuery(const KeyType& lower, const KeyType& upper, uint32_t thread_id) const {
-        // Optional: support from both indexes, combining results
-        uint64_t total = 0;
-        total += dp_index_.RangeQuery(lower, upper, thread_id);
-        total += lipp_index_.RangeQuery(lower, upper, thread_id);
-        return total;
+        return dp_index_.RangeQuery(lower, upper, thread_id) + 
+               lipp_index_.RangeQuery(lower, upper, thread_id);
     }
 
     std::string name() const override {
@@ -58,15 +54,15 @@ public:
     }
 
 private:
-    mutable DynamicPGM<KeyType, BinarySearch, 16> dp_index_; // Replace BinarySearch/16 if needed
+    mutable DynamicPGM<uint64_t, BranchingBinarySearch<16>, 256> dp_index_;
     Lipp<KeyType> lipp_index_;
     size_t insert_count_ = 0;
     const size_t flush_threshold_ = 500000;
 
     void FlushToLIPP() {
-        std::vector<KeyValue<KeyType>> buffer = dp_index_.Export();
+        auto buffer = dp_index_.Export();
         for (const auto& kv : buffer) {
-            lipp_index_.Insert(kv, 0);
+            lipp_index_.Insert(kv, 0);  // assumes LIPP supports online insert
         }
         dp_index_.Clear();
     }
