@@ -37,19 +37,19 @@ public:
                lipp_index_.RangeQuery(lower, upper, thread_id);
     }
 
-    std::string name() const override {
+    std::string name() const  {
         return "HybridPGMLIPP";
     }
 
-    std::vector<std::string> variants() const override {
+    std::vector<std::string> variants() const  {
         return {};
     }
 
-    size_t size() const override {
+    size_t size() const  {
         return dp_index_.size() + lipp_index_.size();
     }
 
-    bool applicable(bool unique, bool range_query, bool insert, bool multithread, const std::string& ops_filename) override {
+    bool applicable(bool unique, bool range_query, bool insert, bool multithread, const std::string& ops_filename)  {
         return unique && !multithread;
     }
 
