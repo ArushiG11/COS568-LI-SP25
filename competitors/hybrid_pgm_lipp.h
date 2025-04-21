@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base.h"
-#include "dynamic_pgm.h"
+#include "dynamic_pgm_index.h"
 #include "lipp.h"
 
 template<class KeyType>
