@@ -2,8 +2,8 @@ import pandas as pd
 
 
 def result_analysis():
-    tasks = ['fb', 'osmc', 'books']
-    indexs = ['BTree', 'DynamicPGM', 'LIPP']
+    tasks = ['fb']
+    indexs = ['DynamicPGM', 'LIPP', 'HybridPGMLIPP']
     # Create dictionaries to store throughput data for each index
     lookuponly_throughput = {}
     insertlookup_throughput = {}
