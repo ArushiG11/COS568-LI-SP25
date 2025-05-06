@@ -4,6 +4,7 @@ import pandas as pd
 def result_analysis():
     tasks = ['fb']
     indexs = ["DynamicPGM", "LIPP", "HybridPGMLIPP", "HybridDoubleBuffer"]
+    index_names = ["Dynamic PGM", "LIPP", "Hybrid", "Doubled Buffer"]
     # Create dictionaries to store throughput data for each index
     lookuponly_throughput = {}
     insertlookup_throughput = {}
@@ -63,7 +64,7 @@ def result_analysis():
     # each subplot should contain 3 bars, each bar corresponds to a dataset (fb, osmc, books) if the throughput is not empty
     
     import matplotlib.pyplot as plt
-    fig, axs = plt.subplots(2, 2, figsize=(10, 10))
+    fig, axs = plt.subplots(2, 2, figsize=(12, 12))
     # Flatten axs for easier indexing
     axs = axs.flatten()
     
@@ -83,7 +84,7 @@ def result_analysis():
     ax.set_title('Lookup-only Throughput')
     ax.set_ylabel('Throughput (Mops/s)')
     ax.set_xticks([x + bar_width*1.5 for x in index])
-    ax.set_xticklabels(indexs)
+    ax.set_xticklabels(index_names)
     ax.legend()
     
     # 2. Plot insert-lookup throughput (separated)
@@ -112,7 +113,7 @@ def result_analysis():
     ax.set_title('Insert-Lookup Throughput (50% insert ratio)')
     ax.set_ylabel('Throughput (Mops/s)')
     ax.set_xticks([x + bar_width*1.5 for x in index])
-    ax.set_xticklabels(indexs)
+    ax.set_xticklabels(index_names)
     ax.legend()
     
     # 3. Plot mixed workload with 10% inserts
@@ -126,7 +127,7 @@ def result_analysis():
     ax.set_title('Mixed Workload (10% insert ratio)')
     ax.set_ylabel('Throughput (Mops/s)')
     ax.set_xticks([x + bar_width*1.5 for x in index])
-    ax.set_xticklabels(indexs)
+    ax.set_xticklabels(index_names)
     ax.legend()
     
     # 4. Plot mixed workload with 90% inserts
@@ -140,7 +141,7 @@ def result_analysis():
     ax.set_title('Mixed Workload (90% insert ratio)')
     ax.set_ylabel('Throughput (Mops/s)')
     ax.set_xticks([x + bar_width*1.5 for x in index])
-    ax.set_xticklabels(indexs)
+    ax.set_xticklabels(index_names)
     ax.legend()
     
     # Add overall title and adjust layout
