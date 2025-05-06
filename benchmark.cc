@@ -8,6 +8,8 @@
 #include "benchmarks/benchmark_dynamic_pgm.h"
 #include "benchmarks/benchmark_lipp.h"
 #include "benchmarks/benchmark_hybrid_pgm_lipp.h"
+#include "benchmarks/benchmark_doublebuffer.h"
+
 
 #include "searches/linear_search.h"
 #include "searches/linear_search_avx.h"

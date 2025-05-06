@@ -11,7 +11,7 @@ def plot_index_size_comparison():
         "90% Insert Mix": f"{base_path}0.900000i_0m_mix_results_table.csv",
     }
 
-    index_names = ["DynamicPGM", "LIPP", "HybridPGMLIPP"]
+    index_names = ["DynamicPGM", "LIPP", "HybridPGMLIPP", "HybridDoubleBuffer"]
 
     size_data = {index: [] for index in index_names}
 
