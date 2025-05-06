@@ -11,10 +11,10 @@ fi
 function execute_uint64_100M() {
     echo "Executing operations for $1 and index $2"
     echo "Executing lookup-only workload"
-    $BENCHMARK ./data/$1 ./data/$1_ops_2M_0.000000rq_0.500000nl_0.000000i --through --csv --only $2 -r 3 # benchmark lookup
-    echo "Executing insert+lookup workload"
-    $BENCHMARK ./data/$1 ./data/$1_ops_2M_0.000000rq_0.500000nl_0.500000i_0m --through --csv --only $2 -r 3 # benchmark insert and lookup
-    echo "Executing insert+lookup mixed workload with insert-ratio 0.9"
+    # $BENCHMARK ./data/$1 ./data/$1_ops_2M_0.000000rq_0.500000nl_0.000000i --through --csv --only $2 -r 3 # benchmark lookup
+    # echo "Executing insert+lookup workload"
+    # $BENCHMARK ./data/$1 ./data/$1_ops_2M_0.000000rq_0.500000nl_0.500000i_0m --through --csv --only $2 -r 3 # benchmark insert and lookup
+    # echo "Executing insert+lookup mixed workload with insert-ratio 0.9"
     $BENCHMARK ./data/$1 ./data/$1_ops_2M_0.000000rq_0.500000nl_0.900000i_0m_mix --through --csv --only $2 -r 3 # benchmark insert and lookup mix
     echo "Executing insert+lookup mixed workload with insert-ratio 0.1"
     $BENCHMARK ./data/$1 ./data/$1_ops_2M_0.000000rq_0.500000nl_0.100000i_0m_mix --through --csv --only $2 -r 3 # benchmark insert and lookup mix
@@ -22,7 +22,7 @@ function execute_uint64_100M() {
 
 mkdir -p ./results
 
-for DATA in fb_100M_public_uint64 
+for DATA in fb_100M_public_uint64 books_100M_public_uint64 osmc_100M_public_uint64
 do
 for INDEX in LIPP DynamicPGM HybridPGMLIPP HybridDoubleBuffer
 do
