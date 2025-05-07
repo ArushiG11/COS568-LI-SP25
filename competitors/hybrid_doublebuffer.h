@@ -14,7 +14,7 @@
 #include "lipp.h"
 #include "searches/branching_binary_search.h"
 
-// Optimized Hybrid Double Buffer Index
+// Final Hybrid Index with double buffering, async flushing, and batched insert into LIPP
 
 template<class KeyType>
 class HybridDoubleBuffer : public Base<KeyType> {
@@ -22,7 +22,7 @@ public:
     HybridDoubleBuffer(const std::vector<int>& params)
         : dp_active_(params), dp_flushing_(params), lipp_index_(params),
           stop_thread_(false), flushing_(false), insert_count_(0),
-          flush_threshold_(100000), last_flush_duration_(0) {
+          flush_threshold_(500000) {
         background_thread_ = std::thread([this]() { FlushMonitor(); });
     }
 
@@ -55,16 +55,24 @@ public:
         size_t result = dp_active_.EqualityLookup(key, thread_id);
         if (result != util::NOT_FOUND && result != util::OVERFLOW) return result;
 
-        result = dp_flushing_.EqualityLookup(key, thread_id);
+        result = lipp_index_.EqualityLookup(key, thread_id);
         if (result != util::NOT_FOUND && result != util::OVERFLOW) return result;
 
-        return lipp_index_.EqualityLookup(key, thread_id);
+        std::shared_lock<std::shared_mutex> lock(flush_mutex_);
+        return dp_flushing_.EqualityLookup(key, thread_id);
     }
 
     uint64_t RangeQuery(const KeyType& lower, const KeyType& upper, uint32_t thread_id) const {
-        return dp_active_.RangeQuery(lower, upper, thread_id) +
-               dp_flushing_.RangeQuery(lower, upper, thread_id) +
-               lipp_index_.RangeQuery(lower, upper, thread_id);
+        uint64_t active_result = dp_active_.RangeQuery(lower, upper, thread_id);
+        uint64_t lipp_result = lipp_index_.RangeQuery(lower, upper, thread_id);
+
+        uint64_t flushing_result;
+        {
+            std::shared_lock<std::shared_mutex> lock(flush_mutex_);
+            flushing_result = dp_flushing_.RangeQuery(lower, upper, thread_id);
+        }
+
+        return active_result + flushing_result + lipp_result;
     }
 
     std::string name() const { return "HybridDoubleBuffer"; }
@@ -76,26 +84,28 @@ public:
     }
 
 private:
-    mutable DynamicPGM<uint64_t, BranchingBinarySearch<1>, 64> dp_active_;
-    mutable DynamicPGM<uint64_t, BranchingBinarySearch<1>, 64> dp_flushing_;
+    mutable DynamicPGM<uint64_t, BranchingBinarySearch<1>, 256> dp_active_;
+    mutable DynamicPGM<uint64_t, BranchingBinarySearch<1>, 256> dp_flushing_;
     Lipp<KeyType> lipp_index_;
 
     std::atomic<bool> flushing_;
     std::atomic<bool> stop_thread_;
     std::thread background_thread_;
 
+    mutable std::shared_mutex flush_mutex_;
     std::mutex swap_mutex_;
     std::condition_variable flush_condition_;
     std::mutex flush_cv_mutex_;
 
     std::atomic<size_t> insert_count_;
     std::atomic<size_t> flush_threshold_;
-    std::atomic<uint64_t> last_flush_duration_;
 
     void FlushMonitor() {
         while (true) {
             std::unique_lock<std::mutex> lock(flush_cv_mutex_);
-            flush_condition_.wait(lock, [this]() { return flushing_.load() || stop_thread_.load(); });
+            flush_condition_.wait(lock, [this]() { 
+                return flushing_.load() || stop_thread_.load(); 
+            });
 
             if (stop_thread_) break;
             if (flushing_) {
@@ -106,27 +116,22 @@ private:
     }
 
     void FlushToLIPP() {
-        auto flush_start = std::chrono::high_resolution_clock::now();
+        // Export and clear flushed buffer
+        std::vector<KeyValue<KeyType>> buffer;
+        {
+            std::unique_lock<std::shared_mutex> lock(flush_mutex_);
+            buffer = dp_flushing_.Export();
+            dp_flushing_.Clear();
+        }
 
-        auto buffer = dp_flushing_.Export();
-        dp_flushing_.Clear();
-
+        // Sort buffer to reduce conflict in LIPP
         std::sort(buffer.begin(), buffer.end(), [](const auto& a, const auto& b) {
             return a.key < b.key;
         });
 
+        // Batched insert into LIPP (avoiding costly Build())
         for (const auto& kv : buffer) {
             lipp_index_.Insert(kv, 0);
-        }
-
-        auto flush_end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(flush_end - flush_start);
-        last_flush_duration_.store(duration.count(), std::memory_order_relaxed);
-
-        if (duration > std::chrono::milliseconds(200)) {
-            flush_threshold_.store(std::max(size_t(50000), flush_threshold_.load() / 2));
-        } else {
-            flush_threshold_.store(std::min(size_t(1000000), flush_threshold_.load() + 50000));
         }
     }
 };

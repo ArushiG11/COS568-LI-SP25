@@ -67,7 +67,7 @@ def result_analysis_with_index_size():
     axs[1].legend()
 
     plt.tight_layout()
-    plt.savefig('mixed_throughput_comparison.png')
+    plt.savefig('mixed_throughput_comparison_final.png')
     plt.show()
 
     # Plot index size comparison
@@ -82,7 +82,7 @@ def result_analysis_with_index_size():
     ax.legend()
 
     plt.tight_layout()
-    plt.savefig('index_size_comparison.png')
+    plt.savefig('index_size_comparison_final.png')
     plt.show()
 
     # Save CSVs
